@@ -1,0 +1,30 @@
+### Health Check
+GET http://localhost:5000/api/health
+
+### Get Profile
+GET http://localhost:5000/api/profile
+
+### Submit Contact Form
+POST http://localhost:5000/api/contact
+Content-Type: application/json
+
+{
+  "name": "Test User",
+  "email": "test@example.com",
+  "message": "This is a test contact submission."
+}
+
+### Admin Login
+POST http://localhost:5000/api/admin/login
+Content-Type: application/json
+
+{
+  "email": "admin@example.com",
+  "password": "admin123_change_in_production"
+}
+
+### Get Case Studies
+GET http://localhost:5000/api/case-studies
+
+### Get Blog Posts
+GET http://localhost:5000/api/blog-posts
