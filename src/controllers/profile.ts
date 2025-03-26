@@ -4,17 +4,6 @@ import { ProfileSchemaType } from '../schemas';
 
 export const getProfile = async (req: Request, res: Response) => {
   try {
-    // Check if Supabase is properly configured
-    if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_KEY) {
-      console.error('Supabase error: Missing credentials');
-      return res.status(500).json({
-        error: {
-          message: 'Database configuration error',
-          details: 'Missing Supabase credentials. Please check server configuration.'
-        }
-      });
-    }
-    
     const { data, error } = await supabase
       .from('profiles')
       .select(`

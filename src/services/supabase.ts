@@ -56,7 +56,10 @@ if (supabaseUrl && supabaseServiceKey) {
   };
   
   const mockInsert = (data: any) => ({
-    select: () => Promise.resolve({ data, error: null }),
+    select: () => ({
+      single: () => Promise.resolve({ data: data[0] || null, error: null }),
+      then: (callback: any) => Promise.resolve(callback({ data, error: null })),
+    }),
     then: (callback: any) => Promise.resolve(callback({ data, error: null })),
   });
   
