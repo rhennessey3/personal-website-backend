@@ -32,9 +32,9 @@ else
 fi
 
 # Run debug script if it exists
-if [ -f "debug-env.js" ]; then
+if [ -f "debug-env.js" ] || [ -f "./debug-env.js" ]; then
   echo "=== Running debug-env.js ==="
-  node debug-env.js
+  node debug-env.js || node ./debug-env.js
 else
   echo "debug-env.js not found"
 fi
