@@ -12,7 +12,7 @@ This application requires the following environment variables:
 
 ## Deployment on Railway
 
-This project uses Railway's Nixpacks build system for deployment:
+This project uses a Dockerfile for deployment on Railway:
 
 1. Create a new project in Railway
 2. Connect your GitHub repository
@@ -22,13 +22,23 @@ This project uses Railway's Nixpacks build system for deployment:
    - `NODE_ENV`: production
    - `PORT`: 8080
    - `CORS_ORIGIN`: Your frontend URL
-4. Railway will automatically detect and build the Node.js application
+4. Railway will use the Dockerfile to build and deploy the application
 
 The deployment process:
-- Nixpacks detects Node.js from package.json
-- Dependencies are installed with `npm install`
+- The Dockerfile uses a multi-stage build process
+- Dependencies are installed with `npm ci`
 - The application is built with `npm run build`
-- The application is started with `npm start`
+- Only production dependencies and built files are included in the final image
+- The application is started directly with `node dist/server.js`
+
+### Why Dockerfile instead of Nixpacks?
+
+Using a Dockerfile instead of Nixpacks provides several advantages:
+1. More control over the build and runtime environment
+2. Avoids issues with environment variable handling
+3. Eliminates the need for the start.sh script which had hardcoded credentials
+4. Ensures Railway environment variables are properly passed to the application
+5. Creates a more consistent deployment process
 
 ## Local Development
 
@@ -45,3 +55,16 @@ If you encounter connection issues with Supabase:
 2. Check if your Supabase project has IP restrictions
 3. Ensure your Supabase project is active
 4. Check Railway logs for any connection errors
+5. Ensure environment variables are properly set in Railway's Variables tab
+6. Verify that the Dockerfile is being used as the builder in railway.json
+
+### Common Issues
+
+#### Environment Variable Conflicts
+The application now uses environment variables directly from Railway without relying on the start.sh script. This prevents conflicts that could occur when environment variables are loaded multiple times or overridden by hardcoded values.
+
+#### Hardcoded Credentials
+The previous deployment used hardcoded Supabase credentials in the start.sh script when a .env file wasn't found. This has been removed in favor of using Railway's environment variables system, which is more secure and flexible.
+
+#### Deployment Builder
+If you're still experiencing issues, verify that railway.json has `"builder": "DOCKERFILE"` set in the build configuration to ensure Railway is using the Dockerfile for deployment.

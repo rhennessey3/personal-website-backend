@@ -8,8 +8,19 @@ import cookieParser from 'cookie-parser';
 const helmet = require('helmet');
 const dotenv = require('dotenv');
 
+// Debug environment variables BEFORE dotenv
+console.log('=== ENVIRONMENT VARIABLES BEFORE DOTENV ===');
+console.log(`SUPABASE_URL exists: ${process.env.SUPABASE_URL ? 'YES' : 'NO'}`);
+console.log(`SUPABASE_SERVICE_KEY exists: ${process.env.SUPABASE_SERVICE_KEY ? 'YES' : 'NO'}`);
+console.log(`Railway-specific vars: ${Object.keys(process.env).filter(key => key.includes('RAILWAY')).join(', ')}`);
+
 // Load environment variables
 dotenv.config();
+
+// Debug environment variables AFTER dotenv
+console.log('=== ENVIRONMENT VARIABLES AFTER DOTENV ===');
+console.log(`SUPABASE_URL exists: ${process.env.SUPABASE_URL ? 'YES' : 'NO'}`);
+console.log(`SUPABASE_SERVICE_KEY exists: ${process.env.SUPABASE_SERVICE_KEY ? 'YES' : 'NO'}`);
 
 // Import routes
 import apiRouter from './routes/api';
