@@ -1,23 +1,11 @@
 [phases.setup]
-nixPkgs = ["nodejs", "nodejs.pkgs.typescript"]
+nixPkgs = ["nodejs"]
 
 [phases.install]
-cmds = ["npm install --include=dev"]
-
-[phases.build]
-cmds = [
-  "echo 'TypeScript version:'",
-  "npx tsc --version",
-  "echo 'Node version:'",
-  "node --version",
-  "echo 'Forcing TypeScript to emit JavaScript files even with errors...'",
-  "npx tsc --skipLibCheck --noEmitOnError false"
-]
+cmds = ["npm install express"]
 
 [start]
-cmd = "npm start"
+cmd = "node simple-server.js"
 
 [variables]
 NODE_ENV = "production"
-NODE_OPTIONS = "--max-old-space-size=4096"
-TS_NODE_TRANSPILE_ONLY = "true"
