@@ -26,6 +26,8 @@ if (supabaseUrl && supabaseServiceKey) {
     }
   );
 } else {
+  console.error('Supabase error: Missing credentials');
+  
   // Create a mock client that returns empty data for all operations
   // This mock implements the SupabaseClient interface to satisfy TypeScript
   supabase = createClient(
@@ -38,25 +40,48 @@ if (supabaseUrl && supabaseServiceKey) {
     }
   );
   
-  // Override methods to return empty data
-  const mockFrom = () => ({
-    select: () => ({
-      eq: () => ({
-        single: () => Promise.resolve({ data: null, error: null }),
-        limit: () => Promise.resolve({ data: [], error: null }),
-      }),
-      limit: () => Promise.resolve({ data: [], error: null }),
-      single: () => Promise.resolve({ data: null, error: null }),
+  // Create a more comprehensive mock
+  const mockQuery = {
+    order: () => mockQuery,
+    eq: () => mockQuery,
+    limit: () => mockQuery,
+    single: () => Promise.resolve({ data: null, error: null }),
+    select: () => mockQuery,
+    match: () => mockQuery,
+    in: () => mockQuery,
+    gte: () => mockQuery,
+    lte: () => mockQuery,
+    range: () => mockQuery,
+    then: (callback: any) => Promise.resolve(callback({ data: [], error: null })),
+  };
+  
+  const mockInsert = (data: any) => ({
+    select: () => Promise.resolve({ data, error: null }),
+    then: (callback: any) => Promise.resolve(callback({ data, error: null })),
+  });
+  
+  const mockUpdate = (data: any) => ({
+    eq: () => ({
+      select: () => Promise.resolve({ data, error: null }),
+      then: (callback: any) => Promise.resolve(callback({ data, error: null })),
     }),
-    insert: () => Promise.resolve({ data: null, error: null }),
-    update: () => ({
-      eq: () => ({
-        select: () => ({
-          single: () => Promise.resolve({ data: null, error: null }),
-        }),
-      }),
+    match: () => ({
+      select: () => Promise.resolve({ data, error: null }),
     }),
-    upsert: () => Promise.resolve({ data: null, error: null }),
+  });
+  
+  const mockFrom = (table: string) => ({
+    select: () => mockQuery,
+    insert: (data: any) => mockInsert(data),
+    update: (data: any) => mockUpdate(data),
+    upsert: (data: any) => ({
+      select: () => Promise.resolve({ data, error: null }),
+      then: (callback: any) => Promise.resolve(callback({ data, error: null })),
+    }),
+    delete: () => ({
+      eq: () => Promise.resolve({ data: null, error: null }),
+      match: () => Promise.resolve({ data: null, error: null }),
+    }),
   });
   
   // @ts-ignore - Override the from method
