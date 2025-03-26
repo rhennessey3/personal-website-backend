@@ -2,16 +2,21 @@
 nixPkgs = ["nodejs", "nodejs.pkgs.typescript"]
 
 [phases.install]
-cmds = ["npm install"]
+cmds = ["npm install --include=dev"]
 
 [phases.build]
-cmds = ["npm run build"]
+cmds = [
+  "echo 'TypeScript version:'",
+  "npx tsc --version",
+  "echo 'Node version:'",
+  "node --version",
+  "echo 'Starting build...'",
+  "npm run build"
+]
 
 [start]
 cmd = "npm start"
 
 [variables]
 NODE_ENV = "production"
-
-# Ensure TypeScript is available during build
 NODE_OPTIONS = "--max-old-space-size=4096"

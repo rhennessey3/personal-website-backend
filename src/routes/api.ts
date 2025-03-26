@@ -16,7 +16,25 @@ router.use('/admin', adminRouter);
 
 // Health check endpoint
 router.get('/health', async (req, res) => {
-  const health = {
+  // Define the health object with proper TypeScript interface
+  interface SupabaseHealth {
+    configured: boolean;
+    status: string;
+    error?: {
+      message: string;
+      code?: string;
+      stack?: string;
+    };
+  }
+
+  interface HealthCheck {
+    status: string;
+    timestamp: string;
+    environment: string;
+    supabase: SupabaseHealth;
+  }
+
+  const health: HealthCheck = {
     status: 'ok',
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV || 'development',
