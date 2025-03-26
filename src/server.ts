@@ -39,6 +39,11 @@ app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Root route for health check
+app.get('/', (req, res) => {
+  res.status(200).send('Server is running');
+});
+
 // Routes
 app.use('/api', apiRouter);
 
