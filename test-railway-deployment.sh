@@ -4,7 +4,7 @@
 # This script tests if your Railway deployment is working correctly
 
 # Set the base URL for your API (update this with your Railway URL)
-BASE_URL="https://personal-website-backend-production.up.railway.app"
+BASE_URL="https://personal-website-backend-production-ad66.up.railway.app"
 
 # Colors for better readability
 GREEN='\033[0;32m'
