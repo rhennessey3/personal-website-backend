@@ -3,18 +3,17 @@ import { config } from 'dotenv';
 
 // Load environment variables
 config();
-
 const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY;
 
-if (!supabaseUrl || !supabaseAnonKey) {
+if (!supabaseUrl || !supabaseServiceKey) {
   console.warn('Missing Supabase credentials. Some features may not work properly.');
 }
 
 // Create Supabase client with fallback values for development
 const supabase = createClient(
   supabaseUrl || 'http://localhost:54321',
-  supabaseAnonKey || 'dummy-key',
+  supabaseServiceKey || 'dummy-key',
   {
     auth: {
       persistSession: false,
