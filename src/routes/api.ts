@@ -14,9 +14,9 @@ router.use('/profile', profileRouter);
 router.use('/contact', contactRouter);
 router.use('/admin', adminRouter);
 
-// Health check endpoint
+// Simple health check endpoint
 router.get('/health', (req, res) => {
-  res.json({ status: 'ok' });
+  return res.status(200).send('OK');
 });
 
 export default router;
