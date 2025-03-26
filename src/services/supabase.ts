@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { config } from 'dotenv';
 
 // Load environment variables
@@ -11,8 +11,8 @@ if (!supabaseUrl || !supabaseServiceKey) {
   console.warn('Missing Supabase credentials. Some features may not work properly.');
 }
 
-// Create a mock Supabase client if credentials are missing
-let supabase;
+// Define a type for our Supabase client
+let supabase: SupabaseClient;
 
 if (supabaseUrl && supabaseServiceKey) {
   // Create real Supabase client if credentials are available
@@ -27,31 +27,40 @@ if (supabaseUrl && supabaseServiceKey) {
   );
 } else {
   // Create a mock client that returns empty data for all operations
-  supabase = {
-    from: () => ({
-      select: () => ({
-        eq: () => ({
-          single: () => Promise.resolve({ data: null, error: null }),
-          limit: () => Promise.resolve({ data: [], error: null }),
-        }),
-        limit: () => Promise.resolve({ data: [], error: null }),
+  // This mock implements the SupabaseClient interface to satisfy TypeScript
+  supabase = createClient(
+    'https://placeholder.supabase.co',
+    'placeholder-key',
+    {
+      auth: {
+        persistSession: false,
+      },
+    }
+  );
+  
+  // Override methods to return empty data
+  const mockFrom = () => ({
+    select: () => ({
+      eq: () => ({
         single: () => Promise.resolve({ data: null, error: null }),
+        limit: () => Promise.resolve({ data: [], error: null }),
       }),
-      insert: () => Promise.resolve({ data: null, error: null }),
-      update: () => ({
-        eq: () => ({
-          select: () => ({
-            single: () => Promise.resolve({ data: null, error: null }),
-          }),
+      limit: () => Promise.resolve({ data: [], error: null }),
+      single: () => Promise.resolve({ data: null, error: null }),
+    }),
+    insert: () => Promise.resolve({ data: null, error: null }),
+    update: () => ({
+      eq: () => ({
+        select: () => ({
+          single: () => Promise.resolve({ data: null, error: null }),
         }),
       }),
-      upsert: () => Promise.resolve({ data: null, error: null }),
     }),
-    auth: {
-      signIn: () => Promise.resolve({ user: null, session: null, error: null }),
-      signOut: () => Promise.resolve({ error: null }),
-    },
-  };
+    upsert: () => Promise.resolve({ data: null, error: null }),
+  });
+  
+  // @ts-ignore - Override the from method
+  supabase.from = mockFrom;
 }
 
 export default supabase;

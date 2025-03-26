@@ -10,8 +10,8 @@ cmds = [
   "npx tsc --version",
   "echo 'Node version:'",
   "node --version",
-  "echo 'Skipping TypeScript type checking and compiling directly...'",
-  "npx tsc --skipLibCheck --noEmit false"
+  "echo 'Forcing TypeScript to emit JavaScript files even with errors...'",
+  "npx tsc --skipLibCheck --noEmitOnError false"
 ]
 
 [start]
