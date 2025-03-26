@@ -7,8 +7,8 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies
-RUN npm ci
+# Install dependencies including TypeScript
+RUN npm ci && npm install -g typescript
 
 # Copy source code
 COPY . .
@@ -28,8 +28,8 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install only production dependencies
-RUN npm ci --only=production
+# Install production dependencies and TypeScript globally
+RUN npm ci --only=production && npm install -g typescript
 
 # Copy built application from builder stage
 COPY --from=builder /app/dist ./dist
