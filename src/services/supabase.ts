@@ -1,10 +1,13 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { config } from 'dotenv';
 
-// Load environment variables
-config();
+// Get environment variables (already loaded in server.ts)
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY;
+
+// Debug environment variables
+console.log('Supabase Service Debug:');
+console.log(`SUPABASE_URL defined: ${supabaseUrl ? 'YES' : 'NO'}`);
+console.log(`SUPABASE_SERVICE_KEY defined: ${supabaseServiceKey ? 'YES' : 'NO'}`);
 
 // Check for missing credentials
 if (!supabaseUrl || !supabaseServiceKey) {
