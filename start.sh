@@ -13,6 +13,17 @@ echo "=== Railway-specific variables ==="
 printenv | grep -i railway || echo "No Railway variables found"
 printenv | grep -i supabase || echo "No Supabase variables found"
 
+echo "=== System information ==="
+echo "Current directory: $(pwd)"
+echo "Directory contents:"
+ls -la
+echo "Node version: $(node --version)"
+echo "NPM version: $(npm --version)"
+echo "Checking dist directory:"
+ls -la dist || echo "dist directory not found"
+echo "Checking if server.js exists:"
+ls -la dist/server.js || echo "server.js not found"
+
 # Check if environment variables are already set (from Railway)
 if [ -n "$SUPABASE_URL" ] && [ -n "$SUPABASE_SERVICE_KEY" ]; then
   echo "=== Environment variables already set (likely from Railway) ==="
