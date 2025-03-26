@@ -11,16 +11,48 @@ if (!supabaseUrl || !supabaseServiceKey) {
   console.warn('Missing Supabase credentials. Some features may not work properly.');
 }
 
-// Create Supabase client
-const supabase = createClient(
-  supabaseUrl || '',
-  supabaseServiceKey || '',
-  {
+// Create a mock Supabase client if credentials are missing
+let supabase;
+
+if (supabaseUrl && supabaseServiceKey) {
+  // Create real Supabase client if credentials are available
+  supabase = createClient(
+    supabaseUrl,
+    supabaseServiceKey,
+    {
+      auth: {
+        persistSession: false,
+      },
+    }
+  );
+} else {
+  // Create a mock client that returns empty data for all operations
+  supabase = {
+    from: () => ({
+      select: () => ({
+        eq: () => ({
+          single: () => Promise.resolve({ data: null, error: null }),
+          limit: () => Promise.resolve({ data: [], error: null }),
+        }),
+        limit: () => Promise.resolve({ data: [], error: null }),
+        single: () => Promise.resolve({ data: null, error: null }),
+      }),
+      insert: () => Promise.resolve({ data: null, error: null }),
+      update: () => ({
+        eq: () => ({
+          select: () => ({
+            single: () => Promise.resolve({ data: null, error: null }),
+          }),
+        }),
+      }),
+      upsert: () => Promise.resolve({ data: null, error: null }),
+    }),
     auth: {
-      persistSession: false,
+      signIn: () => Promise.resolve({ user: null, session: null, error: null }),
+      signOut: () => Promise.resolve({ error: null }),
     },
-  }
-);
+  };
+}
 
 export default supabase;
 
