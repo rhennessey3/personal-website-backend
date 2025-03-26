@@ -4,6 +4,17 @@ import { ProfileSchemaType } from '../schemas';
 
 export const getProfile = async (req: Request, res: Response) => {
   try {
+    // Check if Supabase is properly configured
+    if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_KEY) {
+      console.error('Supabase error: Missing credentials');
+      return res.status(500).json({
+        error: {
+          message: 'Database configuration error',
+          details: 'Missing Supabase credentials. Please check server configuration.'
+        }
+      });
+    }
+    
     const { data, error } = await supabase
       .from('profiles')
       .select(`
@@ -16,11 +27,23 @@ export const getProfile = async (req: Request, res: Response) => {
 
     const response = formatSupabaseResponse(data, error);
     return res.status(response.status).json(response.body);
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error getting profile:', error);
+    
+    // Provide more detailed error for fetch failures
+    if (error.message?.includes('fetch failed')) {
+      return res.status(500).json({
+        error: {
+          message: 'Database connection error',
+          details: 'Failed to connect to Supabase. Please check your environment variables and network connectivity.'
+        }
+      });
+    }
+    
     return res.status(500).json({
       error: {
         message: 'Error retrieving profile',
+        details: error.message || 'Unknown error'
       },
     });
   }

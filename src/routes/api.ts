@@ -15,8 +15,44 @@ router.use('/contact', contactRouter);
 router.use('/admin', adminRouter);
 
 // Health check endpoint
-router.get('/health', (req, res) => {
-  res.json({ status: 'ok' });
+router.get('/health', async (req, res) => {
+  const health = {
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development',
+    supabase: {
+      configured: !!(process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_KEY),
+      status: 'unknown'
+    }
+  };
+
+  // Check Supabase connection if credentials are available
+  if (process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_KEY) {
+    try {
+      // Simple query to test connection
+      const { error } = await import('../services/supabase')
+        .then(({ default: supabase }) =>
+          supabase.from('profiles').select('id').limit(1)
+        );
+      
+      health.supabase.status = error ? 'error' : 'connected';
+      
+      if (error) {
+        health.supabase.error = {
+          message: error.message,
+          code: error.code
+        };
+      }
+    } catch (error: any) {
+      health.supabase.status = 'error';
+      health.supabase.error = {
+        message: error.message || 'Unknown error',
+        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      };
+    }
+  }
+
+  res.json(health);
 });
 
 export default router;

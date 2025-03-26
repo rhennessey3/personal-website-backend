@@ -1,0 +1,17 @@
+[phases.setup]
+nixPkgs = ["nodejs", "nodejs.pkgs.typescript"]
+
+[phases.install]
+cmds = ["npm install"]
+
+[phases.build]
+cmds = ["npm run build"]
+
+[start]
+cmd = "npm start"
+
+[variables]
+NODE_ENV = "production"
+
+# Ensure TypeScript is available during build
+NODE_OPTIONS = "--max-old-space-size=4096"

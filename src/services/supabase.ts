@@ -6,14 +6,15 @@ config();
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY;
 
+// Check for missing credentials
 if (!supabaseUrl || !supabaseServiceKey) {
   console.warn('Missing Supabase credentials. Some features may not work properly.');
 }
 
-// Create Supabase client with fallback values for development
+// Create Supabase client
 const supabase = createClient(
-  supabaseUrl || 'http://localhost:54321',
-  supabaseServiceKey || 'dummy-key',
+  supabaseUrl || '',
+  supabaseServiceKey || '',
   {
     auth: {
       persistSession: false,
