@@ -42,13 +42,29 @@ else
   echo "Please set SUPABASE_URL and SUPABASE_SERVICE_KEY in Railway's Variables tab"
 fi
 
-# Run debug script if it exists
-if [ -f "debug-env.js" ] || [ -f "./debug-env.js" ]; then
-  echo "=== Running debug-env.js ==="
-  node debug-env.js || node ./debug-env.js
-else
-  echo "debug-env.js not found"
+# Check for debug-env.js in various locations and copy it to /app if needed
+if [ -f "debug-env.js" ]; then
+  echo "=== Found debug-env.js in current directory ==="
+  cp debug-env.js /app/debug-env.js 2>/dev/null || echo "Could not copy to /app"
+elif [ -f "./debug-env.js" ]; then
+  echo "=== Found debug-env.js in ./ ==="
+  cp ./debug-env.js /app/debug-env.js 2>/dev/null || echo "Could not copy to /app"
+elif [ -f "../debug-env.js" ]; then
+  echo "=== Found debug-env.js in ../ ==="
+  cp ../debug-env.js /app/debug-env.js 2>/dev/null || echo "Could not copy to /app"
 fi
+
+# Create debug-env.js if it doesn't exist
+if [ ! -f "/app/debug-env.js" ]; then
+  echo "=== Creating debug-env.js in /app ==="
+  echo "console.log('Debug script created by start.sh');" > /app/debug-env.js
+  echo "console.log('Environment variables:');" >> /app/debug-env.js
+  echo "console.log(process.env);" >> /app/debug-env.js
+fi
+
+# Run debug script
+echo "=== Running debug-env.js ==="
+node /app/debug-env.js || echo "Failed to run debug-env.js"
 
 # Start the application
 echo "=== Starting server ==="
