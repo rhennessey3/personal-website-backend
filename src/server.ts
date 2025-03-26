@@ -62,10 +62,11 @@ app.use((req: express.Request, res: express.Response) => {
   });
 });
 
-const PORT = process.env.PORT || 5000;
+const PORT = parseInt(process.env.PORT || '5000', 10);
+const HOST = process.env.HOST || '0.0.0.0'; // Bind to all network interfaces
 
-app.listen(PORT, () => {
-  console.info(`Server running on port ${PORT}`);
+app.listen(PORT, HOST, () => {
+  console.info(`Server running on ${HOST}:${PORT}`);
 });
 
 export default app;
