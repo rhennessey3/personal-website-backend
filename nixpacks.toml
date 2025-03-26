@@ -10,8 +10,8 @@ cmds = [
   "npx tsc --version",
   "echo 'Node version:'",
   "node --version",
-  "echo 'Starting build...'",
-  "npm run build"
+  "echo 'Starting build with noEmitOnError...'",
+  "npx tsc --noEmitOnError"
 ]
 
 [start]
@@ -20,3 +20,4 @@ cmd = "npm start"
 [variables]
 NODE_ENV = "production"
 NODE_OPTIONS = "--max-old-space-size=4096"
+TS_NODE_TRANSPILE_ONLY = "true"
