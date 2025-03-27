@@ -43,15 +43,15 @@ else
 fi
 
 # Check for debug-env.js in various locations and copy it to /app if needed
-if [ -f "debug-env.js" ]; then
+if [ -f "tests/debug-env.js" ]; then
+  echo "=== Found debug-env.js in tests directory ==="
+  cp tests/debug-env.js /app/debug-env.js 2>/dev/null || echo "Could not copy to /app"
+elif [ -f "./tests/debug-env.js" ]; then
+  echo "=== Found debug-env.js in ./tests ==="
+  cp ./tests/debug-env.js /app/debug-env.js 2>/dev/null || echo "Could not copy to /app"
+elif [ -f "debug-env.js" ]; then
   echo "=== Found debug-env.js in current directory ==="
   cp debug-env.js /app/debug-env.js 2>/dev/null || echo "Could not copy to /app"
-elif [ -f "./debug-env.js" ]; then
-  echo "=== Found debug-env.js in ./ ==="
-  cp ./debug-env.js /app/debug-env.js 2>/dev/null || echo "Could not copy to /app"
-elif [ -f "../debug-env.js" ]; then
-  echo "=== Found debug-env.js in ../ ==="
-  cp ../debug-env.js /app/debug-env.js 2>/dev/null || echo "Could not copy to /app"
 fi
 
 # Create debug-env.js if it doesn't exist

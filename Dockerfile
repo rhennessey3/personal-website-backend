@@ -32,7 +32,7 @@ RUN npm ci --only=production
 COPY --from=builder /app/dist ./dist
 
 # Copy debug scripts
-COPY debug-env.js ./
+COPY tests/debug-env.js ./
 
 # Expose the port the app runs on
 EXPOSE 8080
