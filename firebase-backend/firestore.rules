@@ -1,0 +1,67 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper function to check admin status
+    function isAdmin() {
+      return request.auth != null && 
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+    
+    // Public read access for published content
+    match /case_studies/{caseStudyId} {
+      allow read: if resource.data.published == true;
+      allow write: if isAdmin();
+    }
+    
+    match /case_study_sections/{sectionId} {
+      allow read: if get(/databases/$(database)/documents/case_studies/$(resource.data.caseStudyId)).data.published == true;
+      allow write: if isAdmin();
+    }
+    
+    match /case_study_metrics/{metricId} {
+      allow read: if get(/databases/$(database)/documents/case_studies/$(resource.data.caseStudyId)).data.published == true;
+      allow write: if isAdmin();
+    }
+    
+    match /blog_posts/{blogPostId} {
+      allow read: if resource.data.published == true;
+      allow write: if isAdmin();
+    }
+    
+    match /tags/{tagId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    
+    match /profile/{profileId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    
+    match /work_experiences/{experienceId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    
+    match /education/{educationId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    
+    match /skills/{skillId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    
+    match /contact_submissions/{submissionId} {
+      allow create: if true;
+      allow read, update, delete: if isAdmin();
+    }
+    
+    match /users/{userId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow write: if false; // Only manageable through Firebase Console or Functions
+    }
+  }
+}

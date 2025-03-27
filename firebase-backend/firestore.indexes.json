@@ -1,0 +1,55 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "case_studies",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "published", "order": "ASCENDING" },
+        { "fieldPath": "publishedDate", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "case_studies",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "featured", "order": "ASCENDING" },
+        { "fieldPath": "published", "order": "ASCENDING" },
+        { "fieldPath": "publishedDate", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "blog_posts",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "published", "order": "ASCENDING" },
+        { "fieldPath": "publishedDate", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "blog_posts",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "featured", "order": "ASCENDING" },
+        { "fieldPath": "published", "order": "ASCENDING" },
+        { "fieldPath": "publishedDate", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "case_study_sections",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "caseStudyId", "order": "ASCENDING" },
+        { "fieldPath": "order", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "case_study_metrics",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "caseStudyId", "order": "ASCENDING" },
+        { "fieldPath": "order", "order": "ASCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}

@@ -1,0 +1,8 @@
+{
+  "projects": {
+    "default": "personal-website-firebase",
+    "production": "personal-website-backend-d30fa"
+  },
+  "targets": {},
+  "etags": {}
+}

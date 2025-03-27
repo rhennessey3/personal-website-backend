@@ -1,0 +1,30 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Helper function to check admin status
+    function isAdmin() {
+      return request.auth != null && 
+        firestore.exists(/databases/(default)/documents/users/$(request.auth.uid)) &&
+        firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+    
+    match /images/{allPaths=**} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    
+    match /documents/{allPaths=**} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    
+    // Temporary upload path with more permissive rules for client-side uploads
+    match /uploads/{userId}/{fileName} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow write: if request.auth != null && 
+                     request.auth.uid == userId && 
+                     request.resource.contentType.matches('image/.*') && 
+                     request.resource.size < 10 * 1024 * 1024;
+    }
+  }
+}
