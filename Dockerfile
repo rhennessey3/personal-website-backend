@@ -32,9 +32,12 @@ RUN npm ci --only=production
 COPY --from=builder /app/dist ./dist
 
 # Copy debug scripts and start script
-COPY tests/debug-env.js ./
+COPY tests/debug-env.js ./debug-env.js
 COPY start.sh ./
 RUN chmod +x start.sh
+
+# Create a directory for logs
+RUN mkdir -p /app/logs
 
 # Expose the port the app runs on
 EXPOSE 8080

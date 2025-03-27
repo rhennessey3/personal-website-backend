@@ -70,8 +70,75 @@ app.use((req: express.Request, res: express.Response) => {
 const PORT = parseInt(process.env.PORT || '5000', 10);
 const HOST = process.env.HOST || '0.0.0.0'; // Bind to all network interfaces
 
-app.listen(PORT, HOST, () => {
+// Log important configuration before starting
+console.info('=== Server Configuration ===');
+console.info(`PORT: ${PORT}`);
+console.info(`HOST: ${HOST}`);
+console.info(`NODE_ENV: ${process.env.NODE_ENV}`);
+console.info(`CORS_ORIGIN: ${process.env.CORS_ORIGIN || 'http://localhost:3000'}`);
+
+// Start the server with error handling
+const server = app.listen(PORT, HOST, () => {
   console.info(`Server running on ${HOST}:${PORT}`);
+  
+  // Log server address info
+  const addressInfo = server.address();
+  console.info(`Server address info: ${JSON.stringify(addressInfo)}`);
+});
+
+// Handle server errors
+server.on('error', (error: any) => {
+  console.error('Server error:', error);
+  
+  if (error.code === 'EADDRINUSE') {
+    console.error(`Port ${PORT} is already in use. Please use a different port.`);
+  } else if (error.code === 'EACCES') {
+    console.error(`Port ${PORT} requires elevated privileges. Please use a different port.`);
+  }
+  
+  // Exit with error code
+  process.exit(1);
+});
+
+// Implement graceful shutdown
+process.on('SIGTERM', () => {
+  console.info('SIGTERM signal received. Closing server gracefully...');
+  server.close(() => {
+    console.info('Server closed.');
+    process.exit(0);
+  });
+  
+  // Force close after 10 seconds
+  setTimeout(() => {
+    console.error('Forcing server close after timeout');
+    process.exit(1);
+  }, 10000);
+});
+
+process.on('SIGINT', () => {
+  console.info('SIGINT signal received. Closing server gracefully...');
+  server.close(() => {
+    console.info('Server closed.');
+    process.exit(0);
+  });
+  
+  // Force close after 10 seconds
+  setTimeout(() => {
+    console.error('Forcing server close after timeout');
+    process.exit(1);
+  }, 10000);
+});
+
+// Handle uncaught exceptions
+process.on('uncaughtException', (error) => {
+  console.error('Uncaught exception:', error);
+  // Keep the process running but log the error
+});
+
+// Handle unhandled promise rejections
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+  // Keep the process running but log the error
 });
 
 export default app;
