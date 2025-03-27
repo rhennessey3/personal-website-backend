@@ -1,6 +1,10 @@
-import * as functions from "firebase-functions";
+// import * as functions from "firebase-functions"; // Remove this
 import * as admin from "firebase-admin";
 import { z } from "zod";
+// Import the V1 onCall handler and HttpsError
+import { onCall, HttpsError } from "firebase-functions/v1/https";
+// Import functions for typing if needed
+import * as functions from "firebase-functions";
 
 // Validation schema for blog post
 const blogPostSchema = z.object({
@@ -15,26 +19,30 @@ const blogPostSchema = z.object({
 });
 
 // Create a new blog post
-export const create = functions.https.onCall(async (data, context) => {
-  // Verify authentication
-  if (!context.auth) {
-    throw new functions.https.HttpsError(
+// Import the specific type for CallableRequest if needed (optional but good practice)
+// import { CallableRequest } from "firebase-functions/v2/https";
+
+// Use imported onCall and change type hint to any
+export const create = onCall(async (request: any) => {
+  // Verify authentication using request.auth
+  if (!request.auth) {
+    throw new HttpsError( // Use imported HttpsError
       "unauthenticated",
       "User must be authenticated"
     );
   }
   
-  // Verify admin role
+  // Verify admin role using request.auth.uid
   try {
-    const userDoc = await admin.firestore().collection("users").doc(context.auth.uid).get();
+    const userDoc = await admin.firestore().collection("users").doc(request.auth.uid).get();
     if (!userDoc.exists || userDoc.data()?.role !== "admin") {
-      throw new functions.https.HttpsError(
+      throw new HttpsError( // Use imported HttpsError
         "permission-denied",
         "User must be an admin"
       );
     }
   } catch (error) {
-    throw new functions.https.HttpsError(
+    throw new HttpsError( // Use imported HttpsError
       "internal",
       "Error verifying user permissions",
       error
@@ -42,8 +50,8 @@ export const create = functions.https.onCall(async (data, context) => {
   }
   
   try {
-    // Validate input data
-    const validatedData = blogPostSchema.parse(data);
+    // Validate input data using request.data
+    const validatedData = blogPostSchema.parse(request.data);
     
     // Generate slug from title
     const slug = validatedData.title
@@ -58,7 +66,7 @@ export const create = functions.https.onCall(async (data, context) => {
       .get();
       
     if (!existingDoc.empty) {
-      throw new functions.https.HttpsError(
+      throw new HttpsError( // Use imported HttpsError
         "already-exists",
         "A blog post with this title already exists"
       );
@@ -81,41 +89,45 @@ export const create = functions.https.onCall(async (data, context) => {
     };
   } catch (error) {
     if (error instanceof z.ZodError) {
-      throw new functions.https.HttpsError(
+      throw new HttpsError( // Use imported HttpsError
         "invalid-argument",
         "Invalid blog post data: " + JSON.stringify(error.errors)
       );
     }
     
-    throw new functions.https.HttpsError(
+    // Log the detailed error before throwing
+    functions.logger.error("Detailed error creating blog post:", error);
+    
+    throw new HttpsError( // Use imported HttpsError
       "internal",
       "Error creating blog post",
-      error
+      error // Keep the original error for potential structured logging
     );
   }
 });
 
 // Update an existing blog post
-export const update = functions.https.onCall(async (data, context) => {
-  // Verify authentication
-  if (!context.auth) {
-    throw new functions.https.HttpsError(
+// Use imported onCall and change type hint to any
+export const update = onCall(async (request: any) => {
+  // Verify authentication using request.auth
+  if (!request.auth) {
+    throw new HttpsError( // Use imported HttpsError
       "unauthenticated",
       "User must be authenticated"
     );
   }
   
-  // Verify admin role
+  // Verify admin role using request.auth.uid
   try {
-    const userDoc = await admin.firestore().collection("users").doc(context.auth.uid).get();
+    const userDoc = await admin.firestore().collection("users").doc(request.auth.uid).get();
     if (!userDoc.exists || userDoc.data()?.role !== "admin") {
-      throw new functions.https.HttpsError(
+      throw new HttpsError( // Use imported HttpsError
         "permission-denied",
         "User must be an admin"
       );
     }
   } catch (error) {
-    throw new functions.https.HttpsError(
+    throw new HttpsError( // Use imported HttpsError
       "internal",
       "Error verifying user permissions",
       error
@@ -123,23 +135,23 @@ export const update = functions.https.onCall(async (data, context) => {
   }
   
   try {
-    // Check if id is provided
-    if (!data.id) {
-      throw new functions.https.HttpsError(
+    // Check if id is provided in request.data
+    if (!request.data.id) {
+      throw new HttpsError( // Use imported HttpsError
         "invalid-argument",
         "Blog post ID is required"
       );
     }
     
-    // Validate input data
-    const validatedData = blogPostSchema.parse(data);
+    // Validate input data using request.data
+    const validatedData = blogPostSchema.parse(request.data);
     
-    // Check if blog post exists
-    const blogPostRef = admin.firestore().collection("blog_posts").doc(data.id);
+    // Check if blog post exists using request.data.id
+    const blogPostRef = admin.firestore().collection("blog_posts").doc(request.data.id);
     const blogPostDoc = await blogPostRef.get();
     
     if (!blogPostDoc.exists) {
-      throw new functions.https.HttpsError(
+      throw new HttpsError( // Use imported HttpsError
         "not-found",
         "Blog post not found"
       );
@@ -159,8 +171,9 @@ export const update = functions.https.onCall(async (data, context) => {
         .where("slug", "==", slug)
         .get();
         
-      if (!existingDoc.empty && existingDoc.docs[0].id !== data.id) {
-        throw new functions.https.HttpsError(
+      // Compare against request.data.id
+      if (!existingDoc.empty && existingDoc.docs[0].id !== request.data.id) {
+        throw new HttpsError( // Use imported HttpsError
           "already-exists",
           "A blog post with this title already exists"
         );
@@ -178,18 +191,18 @@ export const update = functions.https.onCall(async (data, context) => {
     await blogPostRef.update(blogPostData);
     
     return {
-      id: data.id,
+      id: request.data.id, // Return the id from request.data
       ...blogPostData,
     };
   } catch (error) {
     if (error instanceof z.ZodError) {
-      throw new functions.https.HttpsError(
+      throw new HttpsError( // Use imported HttpsError
         "invalid-argument",
         "Invalid blog post data: " + JSON.stringify(error.errors)
       );
     }
     
-    throw new functions.https.HttpsError(
+    throw new HttpsError( // Use imported HttpsError
       "internal",
       "Error updating blog post",
       error
@@ -198,26 +211,27 @@ export const update = functions.https.onCall(async (data, context) => {
 });
 
 // Delete a blog post
-export const deletePost = functions.https.onCall(async (data, context) => {
-  // Verify authentication
-  if (!context.auth) {
-    throw new functions.https.HttpsError(
+// Use imported onCall and change type hint to any
+export const deletePost = onCall(async (request: any) => {
+  // Verify authentication using request.auth
+  if (!request.auth) {
+    throw new HttpsError( // Use imported HttpsError
       "unauthenticated",
       "User must be authenticated"
     );
   }
   
-  // Verify admin role
+  // Verify admin role using request.auth.uid
   try {
-    const userDoc = await admin.firestore().collection("users").doc(context.auth.uid).get();
+    const userDoc = await admin.firestore().collection("users").doc(request.auth.uid).get();
     if (!userDoc.exists || userDoc.data()?.role !== "admin") {
-      throw new functions.https.HttpsError(
+      throw new HttpsError( // Use imported HttpsError
         "permission-denied",
         "User must be an admin"
       );
     }
   } catch (error) {
-    throw new functions.https.HttpsError(
+    throw new HttpsError( // Use imported HttpsError
       "internal",
       "Error verifying user permissions",
       error
@@ -225,20 +239,20 @@ export const deletePost = functions.https.onCall(async (data, context) => {
   }
   
   try {
-    // Check if id is provided
-    if (!data.id) {
-      throw new functions.https.HttpsError(
+    // Check if id is provided in request.data
+    if (!request.data.id) {
+      throw new HttpsError( // Use imported HttpsError
         "invalid-argument",
         "Blog post ID is required"
       );
     }
     
-    // Check if blog post exists
-    const blogPostRef = admin.firestore().collection("blog_posts").doc(data.id);
+    // Check if blog post exists using request.data.id
+    const blogPostRef = admin.firestore().collection("blog_posts").doc(request.data.id);
     const blogPostDoc = await blogPostRef.get();
     
     if (!blogPostDoc.exists) {
-      throw new functions.https.HttpsError(
+      throw new HttpsError( // Use imported HttpsError
         "not-found",
         "Blog post not found"
       );
@@ -249,7 +263,7 @@ export const deletePost = functions.https.onCall(async (data, context) => {
     
     return { success: true };
   } catch (error) {
-    throw new functions.https.HttpsError(
+    throw new HttpsError( // Use imported HttpsError
       "internal",
       "Error deleting blog post",
       error

@@ -1,16 +1,22 @@
-import * as functions from "firebase-functions";
+// Remove explicit https import
+// import { https } from "firebase-functions";
 import * as admin from "firebase-admin";
 import { z } from "zod";
+// Import the V1 HttpsError
+import { HttpsError } from "firebase-functions/v1/https";
+// Import functions for typing if needed - Removed as no longer needed
+// import * as functions from "firebase-functions";
 
 /**
  * Verifies that the user is authenticated and has admin role
- * @param context The Firebase functions context
+ * @param auth The auth context from the request (request.auth)
  * @throws HttpsError if user is not authenticated or not an admin
  */
-export async function verifyAdmin(context: functions.https.CallableContext): Promise<void> {
+// Adjust signature to accept auth context directly (using 'any' for simplicity)
+export async function verifyAdmin(auth: any): Promise<void> {
   // Verify authentication
-  if (!context.auth) {
-    throw new functions.https.HttpsError(
+  if (!auth) { // Check the passed auth object
+    throw new HttpsError( // Use imported HttpsError
       "unauthenticated",
       "User must be authenticated"
     );
@@ -18,15 +24,16 @@ export async function verifyAdmin(context: functions.https.CallableContext): Pro
   
   // Verify admin role
   try {
-    const userDoc = await admin.firestore().collection("users").doc(context.auth.uid).get();
+    // Use auth.uid directly
+    const userDoc = await admin.firestore().collection("users").doc(auth.uid).get();
     if (!userDoc.exists || userDoc.data()?.role !== "admin") {
-      throw new functions.https.HttpsError(
+      throw new HttpsError( // Use imported HttpsError
         "permission-denied",
         "User must be an admin"
       );
     }
   } catch (error) {
-    throw new functions.https.HttpsError(
+    throw new HttpsError( // Use imported HttpsError
       "internal",
       "Error verifying user permissions",
       error
@@ -80,14 +87,14 @@ export async function isSlugUnique(
  */
 export function handleZodError(error: unknown): never {
   if (error instanceof z.ZodError) {
-    throw new functions.https.HttpsError(
+    throw new HttpsError( // Use imported HttpsError
       "invalid-argument",
       "Validation error",
       error.errors
     );
   }
   
-  throw new functions.https.HttpsError(
+  throw new HttpsError( // Use imported HttpsError
     "internal",
     "Unknown error",
     error

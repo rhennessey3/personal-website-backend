@@ -1,32 +1,37 @@
-import * as functions from "firebase-functions";
+import * as functions from "firebase-functions"; // Keep for typing
+// Remove explicit https import
+// import { https } from "firebase-functions";
 import * as admin from "firebase-admin";
 import * as path from "path";
 import * as os from "os";
 import * as fs from "fs";
 import sharp from "sharp";
 import { v4 as uuid } from "uuid";
+// Import the V1 onCall handler and HttpsError
+import { onCall, HttpsError } from "firebase-functions/v1/https";
 
 // Process uploaded image
-export const process = functions.https.onCall(async (data, context) => {
-  // Verify authentication
-  if (!context.auth) {
-    throw new functions.https.HttpsError(
+// Use imported onCall and add V1 CallableRequest type
+export const process = onCall(async (request: functions.https.CallableRequest) => {
+  // Verify authentication using request.auth
+  if (!request.auth) {
+    throw new HttpsError( // Use imported HttpsError
       "unauthenticated",
       "User must be authenticated"
     );
   }
   
-  // Verify admin role
+  // Verify admin role using request.auth.uid
   try {
-    const userDoc = await admin.firestore().collection("users").doc(context.auth.uid).get();
+    const userDoc = await admin.firestore().collection("users").doc(request.auth.uid).get();
     if (!userDoc.exists || userDoc.data()?.role !== "admin") {
-      throw new functions.https.HttpsError(
+      throw new HttpsError( // Use imported HttpsError
         "permission-denied",
         "User must be an admin"
       );
     }
   } catch (error) {
-    throw new functions.https.HttpsError(
+    throw new HttpsError( // Use imported HttpsError
       "internal",
       "Error verifying user permissions",
       error
@@ -34,6 +39,7 @@ export const process = functions.https.onCall(async (data, context) => {
   }
   
   try {
+    // Destructure from request.data
     const {
       tempPath,
       destinationFolder,
@@ -43,10 +49,10 @@ export const process = functions.https.onCall(async (data, context) => {
       thumbnailWidth = 300,
       thumbnailHeight = 300,
       quality = 80,
-    } = data;
+    } = request.data;
     
     if (!tempPath || !destinationFolder || !fileName) {
-      throw new functions.https.HttpsError(
+      throw new HttpsError( // Use imported HttpsError
         "invalid-argument",
         "Missing required parameters: tempPath, destinationFolder, or fileName"
       );
@@ -160,43 +166,44 @@ export const process = functions.https.onCall(async (data, context) => {
     }
   } catch (error) {
     console.error("Error processing image:", error);
-    throw new functions.https.HttpsError("internal", "Error processing image", error);
+    throw new HttpsError("internal", "Error processing image", error); // Use imported HttpsError
   }
 });
 
 // Auto-process images uploaded directly to certain folders
 // Converted to HTTP callable function instead of Storage trigger
-export const autoProcess = functions.https.onCall(async (data, context) => {
-  // Verify authentication
-  if (!context.auth) {
-    throw new functions.https.HttpsError(
+// Use imported onCall and change type hint to any
+export const autoProcess = onCall(async (request: any) => {
+  // Verify authentication using request.auth
+  if (!request.auth) {
+    throw new HttpsError( // Use imported HttpsError
       "unauthenticated",
       "User must be authenticated"
     );
   }
   
-  // Verify admin role
+  // Verify admin role using request.auth.uid
   try {
-    const userDoc = await admin.firestore().collection("users").doc(context.auth.uid).get();
+    const userDoc = await admin.firestore().collection("users").doc(request.auth.uid).get();
     if (!userDoc.exists || userDoc.data()?.role !== "admin") {
-      throw new functions.https.HttpsError(
+      throw new HttpsError( // Use imported HttpsError
         "permission-denied",
         "User must be an admin"
       );
     }
   } catch (error) {
-    throw new functions.https.HttpsError(
+    throw new HttpsError( // Use imported HttpsError
       "internal",
       "Error verifying user permissions",
       error
     );
   }
   
-  // Validate input data
-  const { filePath, contentType, fileName } = data;
+  // Validate input data from request.data
+  const { filePath, contentType, fileName } = request.data;
   
   if (!filePath || !contentType || !fileName) {
-    throw new functions.https.HttpsError(
+    throw new HttpsError( // Use imported HttpsError
       "invalid-argument",
       "Missing required parameters: filePath, contentType, or fileName"
     );
@@ -287,7 +294,7 @@ export const autoProcess = functions.https.onCall(async (data, context) => {
       thumbnailPath: thumbnailDestination,
       contentType: contentType,
       folder: destinationFolder,
-      uploadedBy: context.auth.uid,
+      uploadedBy: request.auth.uid, // Use request.auth.uid
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
     });
     
@@ -299,7 +306,7 @@ export const autoProcess = functions.https.onCall(async (data, context) => {
     };
   } catch (error) {
     console.error("Error auto-processing image:", error);
-    throw new functions.https.HttpsError(
+    throw new HttpsError( // Use imported HttpsError
       "internal",
       "Error processing image",
       error

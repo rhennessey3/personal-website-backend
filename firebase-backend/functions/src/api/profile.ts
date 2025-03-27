@@ -1,6 +1,10 @@
-import * as functions from "firebase-functions";
+import * as functions from "firebase-functions"; // Keep for typing
+// Remove explicit https import
+// import { https } from "firebase-functions";
 import * as admin from "firebase-admin";
 import { z } from "zod";
+// Import the V1 onCall handler and HttpsError
+import { onCall, HttpsError } from "firebase-functions/v1/https";
 
 // Validation schema for profile
 const profileSchema = z.object({
@@ -19,26 +23,27 @@ const profileSchema = z.object({
 });
 
 // Update profile
-export const update = functions.https.onCall(async (data, context) => {
-  // Verify authentication
-  if (!context.auth) {
-    throw new functions.https.HttpsError(
+// Use imported onCall and add V1 CallableRequest type
+export const update = onCall(async (request: functions.https.CallableRequest) => {
+  // Verify authentication using request.auth
+  if (!request.auth) {
+    throw new HttpsError( // Use imported HttpsError
       "unauthenticated",
       "User must be authenticated"
     );
   }
   
-  // Verify admin role
+  // Verify admin role using request.auth.uid
   try {
-    const userDoc = await admin.firestore().collection("users").doc(context.auth.uid).get();
+    const userDoc = await admin.firestore().collection("users").doc(request.auth.uid).get();
     if (!userDoc.exists || userDoc.data()?.role !== "admin") {
-      throw new functions.https.HttpsError(
+      throw new HttpsError( // Use imported HttpsError
         "permission-denied",
         "User must be an admin"
       );
     }
   } catch (error) {
-    throw new functions.https.HttpsError(
+    throw new HttpsError( // Use imported HttpsError
       "internal",
       "Error verifying user permissions",
       error
@@ -46,8 +51,8 @@ export const update = functions.https.onCall(async (data, context) => {
   }
   
   try {
-    // Validate input data
-    const validatedData = profileSchema.parse(data);
+    // Validate input data using request.data
+    const validatedData = profileSchema.parse(request.data);
     
     // Check if profile exists
     const profileRef = admin.firestore().collection("profile").doc("main");
@@ -74,13 +79,13 @@ export const update = functions.https.onCall(async (data, context) => {
     };
   } catch (error) {
     if (error instanceof z.ZodError) {
-      throw new functions.https.HttpsError(
+      throw new HttpsError( // Use imported HttpsError
         "invalid-argument",
         "Invalid profile data: " + JSON.stringify(error.errors)
       );
     }
     
-    throw new functions.https.HttpsError(
+    throw new HttpsError( // Use imported HttpsError
       "internal",
       "Error updating profile",
       error
@@ -89,26 +94,27 @@ export const update = functions.https.onCall(async (data, context) => {
 });
 
 // Add work experience
-export const addWorkExperience = functions.https.onCall(async (data, context) => {
-  // Verify authentication
-  if (!context.auth) {
-    throw new functions.https.HttpsError(
+// Use imported onCall and add V1 CallableRequest type
+export const addWorkExperience = onCall(async (request: functions.https.CallableRequest) => {
+  // Verify authentication using request.auth
+  if (!request.auth) {
+    throw new HttpsError( // Use imported HttpsError
       "unauthenticated",
       "User must be authenticated"
     );
   }
   
-  // Verify admin role
+  // Verify admin role using request.auth.uid
   try {
-    const userDoc = await admin.firestore().collection("users").doc(context.auth.uid).get();
+    const userDoc = await admin.firestore().collection("users").doc(request.auth.uid).get();
     if (!userDoc.exists || userDoc.data()?.role !== "admin") {
-      throw new functions.https.HttpsError(
+      throw new HttpsError( // Use imported HttpsError
         "permission-denied",
         "User must be an admin"
       );
     }
   } catch (error) {
-    throw new functions.https.HttpsError(
+    throw new HttpsError( // Use imported HttpsError
       "internal",
       "Error verifying user permissions",
       error
@@ -127,14 +133,15 @@ export const addWorkExperience = functions.https.onCall(async (data, context) =>
       order: z.number().optional(),
     });
     
-    const validatedData = workExperienceSchema.parse(data);
+    // Validate using request.data
+    const validatedData = workExperienceSchema.parse(request.data);
     
     // Get the profile ID
     const profileRef = admin.firestore().collection("profile").doc("main");
     const profileDoc = await profileRef.get();
     
     if (!profileDoc.exists) {
-      throw new functions.https.HttpsError(
+      throw new HttpsError( // Use imported HttpsError
         "not-found",
         "Profile not found. Please create a profile first."
       );
@@ -171,13 +178,13 @@ export const addWorkExperience = functions.https.onCall(async (data, context) =>
     };
   } catch (error) {
     if (error instanceof z.ZodError) {
-      throw new functions.https.HttpsError(
+      throw new HttpsError( // Use imported HttpsError
         "invalid-argument",
         "Invalid work experience data: " + JSON.stringify(error.errors)
       );
     }
     
-    throw new functions.https.HttpsError(
+    throw new HttpsError( // Use imported HttpsError
       "internal",
       "Error adding work experience",
       error
@@ -186,26 +193,27 @@ export const addWorkExperience = functions.https.onCall(async (data, context) =>
 });
 
 // Add education
-export const addEducation = functions.https.onCall(async (data, context) => {
-  // Verify authentication
-  if (!context.auth) {
-    throw new functions.https.HttpsError(
+// Use imported onCall and add V1 CallableRequest type
+export const addEducation = onCall(async (request: functions.https.CallableRequest) => {
+  // Verify authentication using request.auth
+  if (!request.auth) {
+    throw new HttpsError( // Use imported HttpsError
       "unauthenticated",
       "User must be authenticated"
     );
   }
   
-  // Verify admin role
+  // Verify admin role using request.auth.uid
   try {
-    const userDoc = await admin.firestore().collection("users").doc(context.auth.uid).get();
+    const userDoc = await admin.firestore().collection("users").doc(request.auth.uid).get();
     if (!userDoc.exists || userDoc.data()?.role !== "admin") {
-      throw new functions.https.HttpsError(
+      throw new HttpsError( // Use imported HttpsError
         "permission-denied",
         "User must be an admin"
       );
     }
   } catch (error) {
-    throw new functions.https.HttpsError(
+    throw new HttpsError( // Use imported HttpsError
       "internal",
       "Error verifying user permissions",
       error
@@ -223,14 +231,15 @@ export const addEducation = functions.https.onCall(async (data, context) => {
       order: z.number().optional(),
     });
     
-    const validatedData = educationSchema.parse(data);
+    // Validate using request.data
+    const validatedData = educationSchema.parse(request.data);
     
     // Get the profile ID
     const profileRef = admin.firestore().collection("profile").doc("main");
     const profileDoc = await profileRef.get();
     
     if (!profileDoc.exists) {
-      throw new functions.https.HttpsError(
+      throw new HttpsError( // Use imported HttpsError
         "not-found",
         "Profile not found. Please create a profile first."
       );
@@ -267,13 +276,13 @@ export const addEducation = functions.https.onCall(async (data, context) => {
     };
   } catch (error) {
     if (error instanceof z.ZodError) {
-      throw new functions.https.HttpsError(
+      throw new HttpsError( // Use imported HttpsError
         "invalid-argument",
         "Invalid education data: " + JSON.stringify(error.errors)
       );
     }
     
-    throw new functions.https.HttpsError(
+    throw new HttpsError( // Use imported HttpsError
       "internal",
       "Error adding education",
       error
@@ -282,26 +291,27 @@ export const addEducation = functions.https.onCall(async (data, context) => {
 });
 
 // Add skill
-export const addSkill = functions.https.onCall(async (data, context) => {
-  // Verify authentication
-  if (!context.auth) {
-    throw new functions.https.HttpsError(
+// Use imported onCall and add V1 CallableRequest type
+export const addSkill = onCall(async (request: functions.https.CallableRequest) => {
+  // Verify authentication using request.auth
+  if (!request.auth) {
+    throw new HttpsError( // Use imported HttpsError
       "unauthenticated",
       "User must be authenticated"
     );
   }
   
-  // Verify admin role
+  // Verify admin role using request.auth.uid
   try {
-    const userDoc = await admin.firestore().collection("users").doc(context.auth.uid).get();
+    const userDoc = await admin.firestore().collection("users").doc(request.auth.uid).get();
     if (!userDoc.exists || userDoc.data()?.role !== "admin") {
-      throw new functions.https.HttpsError(
+      throw new HttpsError( // Use imported HttpsError
         "permission-denied",
         "User must be an admin"
       );
     }
   } catch (error) {
-    throw new functions.https.HttpsError(
+    throw new HttpsError( // Use imported HttpsError
       "internal",
       "Error verifying user permissions",
       error
@@ -317,14 +327,15 @@ export const addSkill = functions.https.onCall(async (data, context) => {
       order: z.number().optional(),
     });
     
-    const validatedData = skillSchema.parse(data);
+    // Validate using request.data
+    const validatedData = skillSchema.parse(request.data);
     
     // Get the profile ID
     const profileRef = admin.firestore().collection("profile").doc("main");
     const profileDoc = await profileRef.get();
     
     if (!profileDoc.exists) {
-      throw new functions.https.HttpsError(
+      throw new HttpsError( // Use imported HttpsError
         "not-found",
         "Profile not found. Please create a profile first."
       );
@@ -359,13 +370,13 @@ export const addSkill = functions.https.onCall(async (data, context) => {
     };
   } catch (error) {
     if (error instanceof z.ZodError) {
-      throw new functions.https.HttpsError(
+      throw new HttpsError( // Use imported HttpsError
         "invalid-argument",
         "Invalid skill data: " + JSON.stringify(error.errors)
       );
     }
     
-    throw new functions.https.HttpsError(
+    throw new HttpsError( // Use imported HttpsError
       "internal",
       "Error adding skill",
       error

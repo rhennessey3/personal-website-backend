@@ -1,6 +1,8 @@
-import * as functions from "firebase-functions";
+// import * as functions from "firebase-functions"; // Remove this
 import * as admin from "firebase-admin";
 import { z } from "zod";
+// Import the V1 onCall handler and HttpsError
+import { onCall, HttpsError } from "firebase-functions/v1/https";
 import { createAuthorizationError, createInternalError } from "../utils/error-handler";
 
 /**
@@ -9,33 +11,35 @@ import { createAuthorizationError, createInternalError } from "../utils/error-ha
  * @param password The password of the admin user
  * @returns The created user
  */
-export const createAdmin = functions.https.onCall(async (data, context) => {
+// Use imported onCall and change type hint to any
+export const createAdmin = onCall(async (request: any) => {
   // Only allow this function to be called by existing admins
-  if (!context.auth) {
-    throw new functions.https.HttpsError(
+  // Verify authentication using request.auth
+  if (!request.auth) {
+    throw new HttpsError( // Use imported HttpsError
       "unauthenticated",
       "User must be authenticated"
     );
   }
   
   try {
-    // Check if the caller is a super admin
-    const callerDoc = await admin.firestore().collection("users").doc(context.auth.uid).get();
+    // Check if the caller is a super admin using request.auth.uid
+    const callerDoc = await admin.firestore().collection("users").doc(request.auth.uid).get();
     if (!callerDoc.exists || callerDoc.data()?.role !== "super_admin") {
-      throw new functions.https.HttpsError(
+      throw new HttpsError( // Use imported HttpsError
         "permission-denied",
         "Only super admins can create new admin users"
       );
     }
     
-    // Validate input data
+    // Validate input data using request.data
     const schema = z.object({
       email: z.string().email("Invalid email address"),
       password: z.string().min(8, "Password must be at least 8 characters"),
       displayName: z.string().optional(),
     });
     
-    const validatedData = schema.parse(data);
+    const validatedData = schema.parse(request.data);
     
     // Create the user in Firebase Authentication
     const userRecord = await admin.auth().createUser({
@@ -49,7 +53,7 @@ export const createAdmin = functions.https.onCall(async (data, context) => {
       email: validatedData.email,
       role: "admin",
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
-      createdBy: context.auth.uid,
+      createdBy: request.auth.uid, // Use request.auth.uid
     });
     
     return {
@@ -58,13 +62,13 @@ export const createAdmin = functions.https.onCall(async (data, context) => {
     };
   } catch (error) {
     if (error instanceof z.ZodError) {
-      throw new functions.https.HttpsError(
+      throw new HttpsError( // Use imported HttpsError
         "invalid-argument",
         "Invalid input data: " + JSON.stringify(error.errors)
       );
     }
     
-    throw new functions.https.HttpsError(
+    throw new HttpsError( // Use imported HttpsError
       "internal",
       "Error creating admin user",
       error
@@ -74,18 +78,20 @@ export const createAdmin = functions.https.onCall(async (data, context) => {
 
 /**
  * Verifies that the user is authenticated and has admin role
- * @param context The Firebase functions context
+ * @param auth The auth context from the request (request.auth)
  * @throws AppError if user is not authenticated or not an admin
  */
-export async function verifyAdmin(context: functions.https.CallableContext): Promise<void> {
+// Adjust signature to accept auth context directly (using 'any' for simplicity)
+export async function verifyAdmin(auth: any): Promise<void> {
   // Verify authentication
-  if (!context.auth) {
+  if (!auth) { // Check the passed auth object
     throw createAuthorizationError("User must be authenticated");
   }
   
   // Verify admin role
   try {
-    const userDoc = await admin.firestore().collection("users").doc(context.auth.uid).get();
+    // Use auth.uid directly
+    const userDoc = await admin.firestore().collection("users").doc(auth.uid).get();
     if (!userDoc.exists || userDoc.data()?.role !== "admin") {
       throw createAuthorizationError("User must be an admin");
     }
@@ -102,15 +108,17 @@ export async function verifyAdmin(context: functions.https.CallableContext): Pro
  * @param context The Firebase functions context
  * @throws AppError if user is not authenticated or not a super admin
  */
-export async function verifySuperAdmin(context: functions.https.CallableContext): Promise<void> {
+// Adjust signature to accept auth context directly (using 'any' for simplicity)
+export async function verifySuperAdmin(auth: any): Promise<void> {
   // Verify authentication
-  if (!context.auth) {
+  if (!auth) { // Check the passed auth object
     throw createAuthorizationError("User must be authenticated");
   }
   
   // Verify super admin role
   try {
-    const userDoc = await admin.firestore().collection("users").doc(context.auth.uid).get();
+    // Use auth.uid directly
+    const userDoc = await admin.firestore().collection("users").doc(auth.uid).get();
     if (!userDoc.exists || userDoc.data()?.role !== "super_admin") {
       throw createAuthorizationError("User must be a super admin");
     }
@@ -128,36 +136,42 @@ export async function verifySuperAdmin(context: functions.https.CallableContext)
  * @param role The new role for the user
  * @returns Success status
  */
-export const updateAdminRole = functions.https.onCall(async (data, context) => {
+// Use imported onCall and change type hint to any
+export const updateAdminRole = onCall(async (request: any) => {
   try {
-    // Verify super admin
-    await verifySuperAdmin(context);
+    // Verify super admin - Pass request.auth to the updated verifySuperAdmin
+    await verifySuperAdmin(request.auth);
     
-    // Validate input data
+    // Validate input data using request.data
     const schema = z.object({
       uid: z.string().min(1, "User ID is required"),
       role: z.enum(["admin", "super_admin"]),
     });
     
-    const validatedData = schema.parse(data);
+    const validatedData = schema.parse(request.data);
     
     // Update the user's role in Firestore
     await admin.firestore().collection("users").doc(validatedData.uid).update({
       role: validatedData.role,
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-      updatedBy: context.auth?.uid,
+      updatedBy: request.auth?.uid, // Use request.auth?.uid
     });
     
     return { success: true };
   } catch (error) {
     if (error instanceof z.ZodError) {
-      throw new functions.https.HttpsError(
+      throw new HttpsError( // Use imported HttpsError
         "invalid-argument",
         "Invalid input data: " + JSON.stringify(error.errors)
       );
     }
     
-    throw new functions.https.HttpsError(
+    // Also check for AppError from verifySuperAdmin if it throws HttpsError directly
+    if (error instanceof HttpsError) {
+        throw error;
+    }
+
+    throw new HttpsError( // Use imported HttpsError
       "internal",
       "Error updating admin role",
       error

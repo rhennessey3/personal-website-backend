@@ -70,14 +70,47 @@ async function getIdToken() {
       const uid = 'test-admin-user';
       const customToken = await admin.auth().createCustomToken(uid, { role: 'admin' });
       console.log('Created custom token for test user');
+
+      // Ensure the test user exists in Firestore with admin role
+      try {
+        console.log(`Ensuring user document exists for uid: ${uid}`);
+        const userRef = admin.firestore().collection('users').doc(uid);
+        await userRef.set({ role: 'admin' }, { merge: true }); // Use set with merge to create or update
+        console.log(`User document for ${uid} ensured with role: admin`);
+      } catch (firestoreError) {
+        console.error(`Error ensuring user document for ${uid}:`, firestoreError.message);
+        // Decide if this should be fatal or if we should try to continue
+        throw new Error(`Failed to set up test user in Firestore: ${firestoreError.message}`);
+      }
+
+      // Exchange custom token for ID token using Firebase Auth REST API
+      console.log('Exchanging custom token for ID token...');
+      const apiKey = process.env.FIREBASE_API_KEY; // Get API key from environment variable
+      if (!apiKey) {
+        console.error('FIREBASE_API_KEY environment variable not set.');
+        throw new Error('API key is missing');
+      }
+
+      const restApiUrl = `https://identitytoolkit.googleapis.com/v1/accounts:signInWithCustomToken?key=${apiKey}`;
       
-      // Note: We're skipping Firestore operations as they require the Firestore API to be enabled
-      console.log('Skipping Firestore operations for testing');
-      
-      // For testing purposes, we'll use the custom token directly
-      // In a real scenario, you would exchange it for an ID token
-      console.log('Using custom token for testing');
-      return customToken;
+      try {
+        const response = await axios.post(restApiUrl, {
+          token: customToken,
+          returnSecureToken: true
+        });
+        
+        const idToken = response.data.idToken;
+        if (!idToken) {
+          throw new Error('ID token not found in response');
+        }
+        console.log('Successfully obtained ID token');
+        // Add detailed log for the obtained token
+        console.log(`   Obtained Token Type: ${typeof idToken}, Length: ${idToken.length}`);
+        return idToken;
+      } catch (exchangeError) {
+        console.error('Error exchanging custom token for ID token:', exchangeError.response ? exchangeError.response.data : exchangeError.message);
+        throw exchangeError; // Re-throw to be caught by the outer catch block
+      }
     } catch (authError) {
       console.error('Error creating custom token:', authError.message);
       console.log('Falling back to mock token for testing');
@@ -109,7 +142,7 @@ async function testCallableFunction(functionName, data = {}, idToken = null) {
         
         console.log(`✅ ${functionName}: Success (Admin SDK)`);
         console.log(`  Result:`, result.data);
-        return true;
+        return result.data; // Return actual data
       } else {
         throw new Error('Firebase Functions not initialized');
       }
@@ -126,6 +159,8 @@ async function testCallableFunction(functionName, data = {}, idToken = null) {
       
       if (idToken) {
         headers['Authorization'] = `Bearer ${idToken}`;
+        // Log the header to verify
+        console.log(`   Authorization Header: Bearer ${idToken.substring(0, 10)}...${idToken.substring(idToken.length - 10)}`);
       }
       
       const body = {
@@ -140,17 +175,19 @@ async function testCallableFunction(functionName, data = {}, idToken = null) {
         });
         
         console.log(`✅ ${functionName}: ${response.status} ${response.statusText} (HTTP)`);
-        return true;
+        // Callable functions return data wrapped in a 'result' object when called via HTTP
+        return response.data.result || response.data;
       } catch (requestError) {
         // For testing purposes, we'll simulate success for all functions
         // This allows testing the script without actual endpoints
         console.log(`⚠️ ${functionName}: Simulating success (${requestError.message})`);
-        return true;
+        // Return null or a specific structure indicating simulation if needed
+        return null;
       }
     }
   } catch (error) {
     console.error(`❌ ${functionName}: Error ${error.message}`);
-    return false;
+    return null; // Return null on error
   }
 }
 
@@ -179,18 +216,19 @@ async function testSubmitContactForm() {
       
       console.log(`✅ submitContactForm: ${response.status} ${response.statusText}`);
       console.log('Response data:', response.data);
-      return true;
+      // Callable functions return data wrapped in a 'result' object when called via HTTP
+      return response.data.result || response.data;
     } catch (error) {
       console.error(`❌ submitContactForm failed: ${error.message}`);
       if (error.response) {
         console.error('Response status:', error.response.status);
         console.error('Response data:', error.response.data);
       }
-      return false;
+      return null; // Return null on error
     }
   } catch (error) {
     console.error('Error testing submitContactForm:', error);
-    return false;
+    return null; // Return null on error
   }
 }
 
@@ -207,14 +245,14 @@ async function testAllFunctions() {
     // Define test data for each function
     const testData = {
       // Profile functions
-      updateProfile: { name: 'Test User', title: 'Test Title', bio: 'Test Bio' },
+      updateProfile: { displayName: 'Test User', email: 'test-admin-user@example.com', headline: 'Test Title', bio: 'Test Bio' },
       addWorkExperience: { company: 'Test Company', position: 'Test Position', startDate: '2023-01', endDate: '2023-12', description: 'Test Description' },
-      addEducation: { institution: 'Test University', degree: 'Test Degree', field: 'Test Field', startYear: 2019, endYear: 2023 },
+      addEducation: { institution: 'Test University', degree: 'Test Degree', field: 'Test Field', startDate: '2019-09', endDate: '2023-05' },
       addSkill: { name: 'Test Skill', category: 'Test Category', level: 90 },
       
       // Blog functions
-      createBlogPost: { title: 'Test Blog Post', content: 'Test Content', slug: 'test-blog-post', tags: ['test'] },
-      updateBlogPost: { id: 'test-id', title: 'Updated Test Blog Post', content: 'Updated Test Content' },
+      createBlogPost: { title: 'Test Blog Post', summary: 'Test Summary', content: 'Test Content', tags: ['test'] },
+      updateBlogPost: { id: 'test-id', title: 'Updated Test Blog Post', summary: 'Updated Test Summary', content: 'Updated Test Content' },
       deleteBlogPost: { id: 'test-id' },
       
       // Case study functions
@@ -258,16 +296,74 @@ async function testAllFunctions() {
     
     // Test each authenticated function
     const results = [];
+    let createdBlogPostId = null; // Store ID from createBlogPost
+    let createdCaseStudyId = null; // Store ID from createCaseStudy
+    let createdContactSubmissionId = null; // Store ID from submitContactForm (though not strictly needed for delete test)
+
+    // Get the ID from the initial contact form test if it succeeded
+    // Note: testSubmitContactForm needs to be modified to return the result object
+    // For now, let's assume it returns null on failure or the { success: true, id: ... } object
+    if (contactFormResult && contactFormResult.id) {
+      createdContactSubmissionId = contactFormResult.id;
+      console.log(`   Stored contact submission ID: ${createdContactSubmissionId}`);
+    }
+
+    // Log the token being used for the loop
+    console.log(`\n--- Starting Authenticated Tests ---`);
+    console.log(`   Using Token Type: ${typeof idToken}, Length: ${idToken?.length || 'N/A'}`);
+
     for (const functionName of functions) {
-      const data = testData[functionName] || {};
-      
-      const result = await testCallableFunction(
+      let data = { ...(testData[functionName] || {}) }; // Clone data to avoid modifying original testData
+      let skipTest = false;
+
+      // Inject IDs for update/delete operations
+      if (functionName === 'updateBlogPost' || functionName === 'deleteBlogPost') {
+        if (!createdBlogPostId) {
+          console.log(`⚠️ Skipping ${functionName} because createBlogPost failed or didn't return an ID.`);
+          skipTest = true;
+          results.push({ functionName, success: false, skipped: true });
+        } else {
+          data.id = createdBlogPostId;
+        }
+      } else if (functionName === 'updateCaseStudy' || functionName === 'deleteCaseStudy') {
+        if (!createdCaseStudyId) {
+          console.log(`⚠️ Skipping ${functionName} because createCaseStudy failed or didn't return an ID.`);
+          skipTest = true;
+          results.push({ functionName, success: false, skipped: true });
+        } else {
+          data.id = createdCaseStudyId;
+        }
+      } else if (functionName === 'markContactAsRead' || functionName === 'deleteContactSubmission') {
+         // Use the ID from the initial test if available, otherwise fallback to mock
+         data.id = createdContactSubmissionId || testData[functionName]?.id || 'test-id';
+         console.log(`   Using contact submission ID for ${functionName}: ${data.id}`);
+      }
+      // Add similar logic for other create/update/delete pairs if needed
+
+      if (skipTest) {
+        continue; // Move to the next function
+      }
+
+      const resultData = await testCallableFunction(
         functionName,
         data,
         idToken // All these functions require authentication
       );
       
-      results.push({ functionName, success: result });
+      const success = resultData !== null;
+      results.push({ functionName, success: success });
+
+      // Store IDs from successful create operations
+      if (success) {
+        if (functionName === 'createBlogPost' && resultData.id) {
+          createdBlogPostId = resultData.id;
+          console.log(`   Stored blog post ID: ${createdBlogPostId}`);
+        } else if (functionName === 'createCaseStudy' && resultData.id) {
+          createdCaseStudyId = resultData.id;
+          console.log(`   Stored case study ID: ${createdCaseStudyId}`);
+        }
+        // Add similar logic for other create operations if needed
+      }
     }
     
     // Print summary
