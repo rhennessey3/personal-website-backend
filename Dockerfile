@@ -31,11 +31,13 @@ RUN npm ci --only=production
 # Copy built application from builder stage
 COPY --from=builder /app/dist ./dist
 
-# Copy debug scripts
+# Copy debug scripts and start script
 COPY tests/debug-env.js ./
+COPY start.sh ./
+RUN chmod +x start.sh
 
 # Expose the port the app runs on
 EXPOSE 8080
 
-# Start the application
-CMD ["node", "dist/server.js"]
+# Start the application using the start script
+CMD ["./start.sh"]

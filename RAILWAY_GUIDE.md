@@ -88,7 +88,20 @@ The following environment variables must be configured in Railway:
    - Add all required environment variables listed above
    - Click "Add" for each variable
 
-4. **Deploy your application:**
+4. **Ensure Dockerfile and start.sh alignment:**
+   - Verify that the Dockerfile correctly copies and uses the start.sh script:
+     ```dockerfile
+     # Copy debug scripts and start script
+     COPY tests/debug-env.js ./
+     COPY start.sh ./
+     RUN chmod +x start.sh
+     
+     # Start the application using the start script
+     CMD ["./start.sh"]
+     ```
+   - Ensure start.sh handles environment variables and starts the application correctly
+
+5. **Deploy your application:**
    - Railway will automatically detect the Dockerfile and start building
    - You can monitor the build progress in the "Deployments" tab
 
@@ -237,6 +250,33 @@ c) **Memory issues during build:**
    - Increase the memory allocation for the build process
    - Split large operations into smaller steps
 
+#### 4. Dockerfile and start.sh Misalignment
+
+**Symptoms:**
+- Application starts but behaves unexpectedly
+- Environment variables are not properly loaded
+- Debug scripts are not found or not executed
+- Application crashes with path-related errors
+
+**Possible Causes and Solutions:**
+
+a) **Inconsistent file paths:**
+   - Ensure paths in Dockerfile match those in start.sh
+   - Use absolute paths where appropriate
+   - Verify working directory assumptions
+
+b) **Script not being used:**
+   - Ensure the Dockerfile uses the start.sh script as its entry point
+   - Check that start.sh has executable permissions (`chmod +x start.sh`)
+
+c) **Environment variable handling:**
+   - Ensure both files handle environment variables consistently
+   - Verify that required variables are passed through from Docker to the script
+
+d) **File copying issues:**
+   - Ensure all required files are copied into the Docker image
+   - Check that file permissions are preserved
+
 ## Best Practices
 
 1. **Use environment variables for all configuration:**
@@ -269,3 +309,10 @@ c) **Memory issues during build:**
    - Regularly check Railway logs for errors
    - Set up alerts for deployment failures
    - Monitor application performance metrics
+
+8. **Ensure alignment between Dockerfile and start.sh:**
+   - When using a start.sh script in a Docker-based deployment, it is critical to ensure the Dockerfile and the script are aligned in both build-time logic and runtime behavior
+   - Misalignment may result in skipped tasks, failed startup, or silent runtime errors
+   - The Dockerfile should copy the start.sh script and set it as the entry point
+   - The start.sh script should handle environment setup, debugging, and application startup
+   - Both files should reference the same paths, environment variables, and commands
