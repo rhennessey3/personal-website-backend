@@ -67,13 +67,9 @@ if [ -z "$HOST" ]; then
   export HOST="0.0.0.0"
 fi
 
-# Check for debug-env.js
-log "=== Checking for debug-env.js ==="
-if [ -f "debug-env.js" ]; then
-  log "Found debug-env.js in current directory"
-else
-  log "Creating debug-env.js"
-  cat > debug-env.js << 'EOF'
+# Create a simple inline debug script
+log "=== Creating debug script ==="
+cat > debug-script.js << 'EOF'
 // Simple debug script for environment variables
 console.log('=== Debug Environment Variables ===');
 
@@ -104,11 +100,10 @@ console.log(`SUPABASE_SERVICE_KEY starts with: ${process.env.SUPABASE_SERVICE_KE
 
 console.log('\nDebug script completed successfully');
 EOF
-fi
 
 # Run debug script
-log "=== Running debug-env.js ==="
-node debug-env.js 2>&1 | tee -a $LOG_FILE || log "Failed to run debug-env.js"
+log "=== Running debug script ==="
+node debug-script.js 2>&1 | tee -a $LOG_FILE || log "Failed to run debug script"
 
 # Verify dist directory exists
 if [ ! -d "dist" ]; then
