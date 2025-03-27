@@ -67,9 +67,9 @@ if [ -z "$HOST" ]; then
   export HOST="0.0.0.0"
 fi
 
-# Comment out debug script execution as it's causing issues
-log "=== Debug script execution disabled ==="
-# node tests/debug-env.js 2>&1 | tee -a $LOG_FILE || log "Failed to run debug-env.js"
+# Run debug script from root directory
+log "=== Running debug-env.js ==="
+node debug-env.js 2>&1 | tee -a $LOG_FILE || log "Failed to run debug-env.js"
 
 # Verify dist directory exists
 if [ ! -d "dist" ]; then
