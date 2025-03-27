@@ -67,43 +67,9 @@ if [ -z "$HOST" ]; then
   export HOST="0.0.0.0"
 fi
 
-# Create debug-env.js directly in /app
-log "=== Creating debug-env.js ==="
-cat > /app/debug-env.js << 'EOF'
-// Simple debug script for environment variables
-console.log('=== Debug Environment Variables ===');
-
-// Print all environment variables (masking sensitive values)
-const envVars = process.env;
-const safeEnvVars = { ...envVars };
-
-// Mask sensitive values
-if (safeEnvVars.SUPABASE_SERVICE_KEY) {
-  safeEnvVars.SUPABASE_SERVICE_KEY = safeEnvVars.SUPABASE_SERVICE_KEY.substring(0, 10) + '...';
-}
-if (safeEnvVars.JWT_SECRET) {
-  safeEnvVars.JWT_SECRET = safeEnvVars.JWT_SECRET.substring(0, 10) + '...';
-}
-
-// Print all environment variables
-console.log('\nAll environment variables:');
-Object.keys(safeEnvVars).sort().forEach(key => {
-  console.log(`${key}: ${safeEnvVars[key]}`);
-});
-
-// Check specific Supabase variables
-console.log('\nSupabase variables check:');
-console.log(`SUPABASE_URL defined: ${typeof process.env.SUPABASE_URL !== 'undefined'}`);
-console.log(`SUPABASE_URL value: ${process.env.SUPABASE_URL || 'NOT SET'}`);
-console.log(`SUPABASE_SERVICE_KEY defined: ${typeof process.env.SUPABASE_SERVICE_KEY !== 'undefined'}`);
-console.log(`SUPABASE_SERVICE_KEY starts with: ${process.env.SUPABASE_SERVICE_KEY ? process.env.SUPABASE_SERVICE_KEY.substring(0, 10) + '...' : 'NOT SET'}`);
-
-console.log('\nDebug script completed successfully');
-EOF
-
-# Run debug script
+# Run debug script from tests directory
 log "=== Running debug-env.js ==="
-node /app/debug-env.js 2>&1 | tee -a $LOG_FILE || log "Failed to run debug-env.js"
+node tests/debug-env.js 2>&1 | tee -a $LOG_FILE || log "Failed to run debug-env.js"
 
 # Verify dist directory exists
 if [ ! -d "dist" ]; then

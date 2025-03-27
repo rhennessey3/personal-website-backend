@@ -31,6 +31,9 @@ RUN npm ci --only=production
 # Copy built application from builder stage
 COPY --from=builder /app/dist ./dist
 
+# Copy test scripts and debug utilities
+COPY tests/ ./tests/
+
 # Copy start script
 COPY start.sh ./
 RUN chmod +x start.sh
