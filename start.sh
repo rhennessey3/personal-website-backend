@@ -67,9 +67,8 @@ if [ -z "$HOST" ]; then
   export HOST="0.0.0.0"
 fi
 
-# Run debug script from root directory
-log "=== Running debug-env.js ==="
-node debug-env.js 2>&1 | tee -a $LOG_FILE || log "Failed to run debug-env.js"
+# Skip debug script execution to avoid module not found errors
+log "=== Debug script execution skipped ==="
 
 # Verify dist directory exists
 if [ ! -d "dist" ]; then
