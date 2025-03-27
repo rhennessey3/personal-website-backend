@@ -91,8 +91,7 @@ The following environment variables must be configured in Railway:
 4. **Ensure Dockerfile and start.sh alignment:**
    - Verify that the Dockerfile correctly copies and uses the start.sh script:
      ```dockerfile
-     # Copy debug scripts and start script
-     COPY tests/debug-env.js ./
+     # Copy start script
      COPY start.sh ./
      RUN chmod +x start.sh
      
