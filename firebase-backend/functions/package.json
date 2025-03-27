@@ -2,7 +2,7 @@
   "name": "functions",
   "scripts": {
     "lint": "echo 'Skipping lint'",
-    "build": "echo 'Skipping build'",
+    "build": "tsc",
     "build:watch": "tsc --watch",
     "serve": "firebase emulators:start --only functions",
     "shell": "firebase functions:shell",

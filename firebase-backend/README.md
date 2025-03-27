@@ -111,6 +111,28 @@ Access control is implemented through Firebase Authentication and security rules
 - Admin-only write access for all content
 - Form submission allowed for unauthenticated users
 
+## Frontend Integration
+
+For detailed instructions on how to connect a Next.js frontend to this Firebase backend, please refer to the [Frontend Integration Guide](./FRONTEND_INTEGRATION.md). This guide covers:
+
+- Setting up Firebase in Next.js
+- Firebase Authentication implementation
+- Accessing Firestore Database
+- Calling Cloud Functions
+- Handling File Uploads with Firebase Storage
+- Deploying to Vercel
+- Security Best Practices
+
+## Testing Endpoints
+
+To ensure all Cloud Functions endpoints are working correctly and returning 200 status codes, you can use the provided test script. For detailed instructions, refer to the [Test Endpoints Guide](./TEST_ENDPOINTS.md).
+
+The test script:
+- Tests all deployed Cloud Functions
+- Verifies authentication is working correctly
+- Ensures endpoints return 200 status codes
+- Provides detailed error information for failed tests
+
 ## License
 
 This project is licensed under the ISC License.

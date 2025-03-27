@@ -31,7 +31,7 @@ export const markContactAsRead = contact.markAsRead;
 export const deleteContactSubmission = contact.deleteSubmission;
 
 export const processImage = imageProcessing.process;
-export const autoProcessUploadedImage = imageProcessing.autoProcess;
+export const autoProcess = imageProcessing.autoProcess;
 
 // Auth functions
 export const createAdmin = adminAuth.createAdmin;

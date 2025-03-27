@@ -41,6 +41,11 @@ lib/
 dist/
 build/
 
+# Service account keys and sensitive files
+service-account-key.json
+*-service-account-key.json
+*-firebase-adminsdk-*.json
+
 # IDE
 .idea/
 .vscode/
