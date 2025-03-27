@@ -89,7 +89,7 @@ export async function verifyAdmin(context: functions.https.CallableContext): Pro
     if (!userDoc.exists || userDoc.data()?.role !== "admin") {
       throw createAuthorizationError("User must be an admin");
     }
-  } catch (error) {
+  } catch (error: any) {
     if (error.name === "AppError") {
       throw error;
     }
@@ -114,7 +114,7 @@ export async function verifySuperAdmin(context: functions.https.CallableContext)
     if (!userDoc.exists || userDoc.data()?.role !== "super_admin") {
       throw createAuthorizationError("User must be a super admin");
     }
-  } catch (error) {
+  } catch (error: any) {
     if (error.name === "AppError") {
       throw error;
     }

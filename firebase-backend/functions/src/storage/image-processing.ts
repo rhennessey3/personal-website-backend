@@ -3,7 +3,7 @@ import * as admin from "firebase-admin";
 import * as path from "path";
 import * as os from "os";
 import * as fs from "fs";
-import * as sharp from "sharp";
+import sharp from "sharp";
 import { v4 as uuid } from "uuid";
 
 // Process uploaded image
@@ -165,35 +165,41 @@ export const process = functions.https.onCall(async (data, context) => {
 });
 
 // Auto-process images uploaded directly to certain folders
-export const autoProcess = functions.storage.object().onFinalize(async (object) => {
-  const filePath = object.name;
-  if (!filePath) return;
+// Converted to HTTP callable function instead of Storage trigger
+export const autoProcess = functions.https.onCall(async (data, context) => {
+  // Verify authentication
+  if (!context.auth) {
+    throw new functions.https.HttpsError(
+      "unauthenticated",
+      "User must be authenticated"
+    );
+  }
   
-  // Only process images uploaded to specific directories
-  if (!filePath.startsWith("uploads/")) return;
-  
-  // Only process image files
-  const contentType = object.contentType || "";
-  if (!contentType.startsWith("image/")) return;
-  
-  // Extract user ID and filename from path
-  const pathParts = filePath.split("/");
-  if (pathParts.length < 3) return;
-  
-  const userId = pathParts[1];
-  const fileName = pathParts[2];
-  
-  // Check if user is authorized (e.g., admin)
+  // Verify admin role
   try {
-    const userDoc = await admin.firestore().collection("users").doc(userId).get();
+    const userDoc = await admin.firestore().collection("users").doc(context.auth.uid).get();
     if (!userDoc.exists || userDoc.data()?.role !== "admin") {
-      console.log("Unauthorized user tried to upload an image");
-      await admin.storage().bucket().file(filePath).delete();
-      return;
+      throw new functions.https.HttpsError(
+        "permission-denied",
+        "User must be an admin"
+      );
     }
   } catch (error) {
-    console.error("Error verifying user permissions:", error);
-    return;
+    throw new functions.https.HttpsError(
+      "internal",
+      "Error verifying user permissions",
+      error
+    );
+  }
+  
+  // Validate input data
+  const { filePath, contentType, fileName } = data;
+  
+  if (!filePath || !contentType || !fileName) {
+    throw new functions.https.HttpsError(
+      "invalid-argument",
+      "Missing required parameters: filePath, contentType, or fileName"
+    );
   }
   
   // Process the image
@@ -281,15 +287,52 @@ export const autoProcess = functions.storage.object().onFinalize(async (object) 
       thumbnailPath: thumbnailDestination,
       contentType: contentType,
       folder: destinationFolder,
-      uploadedBy: userId,
+      uploadedBy: context.auth.uid,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
     });
     
-    console.log(`Successfully processed image: ${fileName}`);
+    return {
+      success: true,
+      originalPath: originalDestination,
+      optimizedPath: optimizedDestination,
+      thumbnailPath: thumbnailDestination
+    };
   } catch (error) {
     console.error("Error auto-processing image:", error);
+    throw new functions.https.HttpsError(
+      "internal",
+      "Error processing image",
+      error
+    );
   } finally {
     // Clean up temporary files
     await fs.promises.rm(tempDir, { recursive: true, force: true });
   }
 });
+
+// Original Storage trigger function (commented out for now)
+/*
+export const autoProcessStorage = functions.storage.object().onFinalize(async (object) => {
+  const filePath = object.name;
+  if (!filePath) return;
+  
+  // Only process images uploaded to specific directories
+  if (!filePath.startsWith("uploads/")) return;
+  
+  // Only process image files
+  const contentType = object.contentType || "";
+  if (!contentType.startsWith("image/")) return;
+  
+  // Extract user ID and filename from path
+  const pathParts = filePath.split("/");
+  if (pathParts.length < 3) return;
+  
+  const userId = pathParts[1];
+  const fileName = pathParts[2];
+  
+  // Call the HTTP callable function with the same parameters
+  // This is just a placeholder - in a real implementation, you would need to
+  // call the function differently or implement the processing logic here
+  console.log(`Storage trigger detected for ${filePath}`);
+});
+*/
