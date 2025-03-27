@@ -67,9 +67,9 @@ if [ -z "$HOST" ]; then
   export HOST="0.0.0.0"
 fi
 
-# Create a simple inline debug script
-log "=== Creating debug script ==="
-cat > debug-script.js << 'EOF'
+# Create debug-env.js directly in /app
+log "=== Creating debug-env.js ==="
+cat > /app/debug-env.js << 'EOF'
 // Simple debug script for environment variables
 console.log('=== Debug Environment Variables ===');
 
@@ -102,8 +102,8 @@ console.log('\nDebug script completed successfully');
 EOF
 
 # Run debug script
-log "=== Running debug script ==="
-node debug-script.js 2>&1 | tee -a $LOG_FILE || log "Failed to run debug script"
+log "=== Running debug-env.js ==="
+node /app/debug-env.js 2>&1 | tee -a $LOG_FILE || log "Failed to run debug-env.js"
 
 # Verify dist directory exists
 if [ ! -d "dist" ]; then
