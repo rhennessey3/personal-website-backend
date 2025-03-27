@@ -1,5 +1,5 @@
-# Use Node.js 18 Alpine as the base image
-FROM node:18-alpine
+# Build stage
+FROM node:18-alpine AS builder
 
 # Set working directory
 WORKDIR /app
@@ -7,14 +7,35 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install only express
-RUN npm install express
+# Install dependencies
+RUN npm ci
 
-# Copy simple server
-COPY simple-server.js ./
+# Copy source code
+COPY . .
+
+# Build the application
+RUN npm run build
+
+# Production stage
+FROM node:18-alpine AS production
+
+# Set working directory
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Install only production dependencies
+RUN npm ci --only=production
+
+# Copy built application from builder stage
+COPY --from=builder /app/dist ./dist
+
+# Copy debug scripts
+COPY debug-env.js ./
 
 # Expose the port the app runs on
 EXPOSE 8080
 
-# Start the simple server
-CMD ["node", "simple-server.js"]
+# Start the application
+CMD ["node", "dist/server.js"]

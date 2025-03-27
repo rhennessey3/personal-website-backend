@@ -1,11 +1,21 @@
 [phases.setup]
-nixPkgs = ["nodejs"]
+nixPkgs = ["nodejs", "nodejs.pkgs.typescript"]
 
 [phases.install]
-cmds = ["npm install express"]
+cmds = ["npm install --include=dev"]
+
+[phases.build]
+cmds = [
+  "echo 'TypeScript version:'",
+  "npx tsc --version",
+  "echo 'Node version:'",
+  "node --version",
+  "npm run build"
+]
 
 [start]
-cmd = "node simple-server.js"
+cmd = "node dist/server.js"
 
 [variables]
 NODE_ENV = "production"
+PORT = "8080"
